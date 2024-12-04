@@ -1,71 +1,68 @@
-import numpy as np
-import xarray as xr
-import dask
 import streamlit as st
-import pydeck as pdk
+import xarray as xr
 import pandas as pd
+import pydeck as pdk
+from pathlib import Path
 
-# Load multiple NetCDF files as an Xarray dataset with Dask for lazy loading
-data_path = "GFED5_Beta_daily_202012.nc"  # Update to your dataset path
+DATA_DIR = "./GFED5/daily/" 
+
+# open just
+data_path = f"{DATA_DIR}/GFED5_Beta_daily_202105.nc" 
 ds = xr.open_mfdataset(data_path, chunks={"time": 1}, parallel=True)
+ds = ds.drop_vars(list(ds.data_vars.keys())[:2])
 
 # Sidebar widgets for filtering
 st.sidebar.header("Filter Options")
 emission_type = st.sidebar.selectbox("Emission Type", list(ds.data_vars.keys()))
-start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2000-01-01"))
+start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2014-01-01"))
 end_date = st.sidebar.date_input("End Date", value=pd.to_datetime("2020-12-31"))
 
-# Filter dataset based on user input
-filtered_data = ds[emission_type].sel(time=slice(start_date, end_date))
 
-# Check if data is available and non-empty
-if filtered_data.time.size > 0:
-    try:
-        # Aggregate across time (e.g., mean emissions over the selected time range)
-        monthly_avg = filtered_data.resample(time="1ME").mean()
-        mean_data = monthly_avg.isel(time=0).compute()  # Compute for a specific month
+start_date = pd.to_datetime(start_date, format="%Y-%m")
+end_date = pd.to_datetime(end_date, format="%Y-%m")
 
-        # Create a meshgrid for lat/lon and flatten for PyDeck
-        latitudes, longitudes = np.meshgrid(mean_data["lat"].values, mean_data["lon"].values, indexing="ij")
-        emissions = mean_data.values
+# List all NetCDF files in the directory
 
-        # Flatten arrays for DataFrame creation
-        data_df = pd.DataFrame({
-            "lat": latitudes.ravel(),
-            "lon": longitudes.ravel(),
-            "emissions": emissions.ravel()
-        }).dropna()
+all_files = sorted(Path(DATA_DIR).glob("*.nc"))
 
-        # Validate DataFrame
-        if data_df.isnull().any().any():
-            st.error("Data contains NaN values. Please check the input dataset.")
-            st.stop()
+# Filter files by date range
 
-        # PyDeck Layer
-        layer = pdk.Layer(
-            "HeatmapLayer",
-            data=data_df.to_dict(orient="records"),  # Convert DataFrame to a list of dictionaries
-            get_position=["lon", "lat"],
-            get_weight="emissions",
-            radius_pixels=1,
-        )
+filtered_files = [
+     str(file) for file in all_files
+     if start_date <= pd.to_datetime(file.stem[-6:], format="%Y%m") <= end_date
+     ]
 
-        # ViewState for PyDeck
-        view_state = {
-            "latitude": float(data_df["lat"].mean()),  # Convert to native Python float
-            "longitude": float(data_df["lon"].mean()),  # Convert to native Python float
-            "zoom": 3,
-            "pitch": 0,
-            "bearing": 0,
-        }
+if not filtered_files:
+     raise ValueError("No files match the specified date range.")
 
-        # Render PyDeck Chart
-        deck = pdk.Deck(layers=[layer], initial_view_state=view_state)
-        st.pydeck_chart(deck)
+ds = xr.open_mfdataset(filtered_files)
 
-    except st.runtime.runtimeerrors.StreamlitRuntimeError:
-        st.warning("The WebSocket connection was closed.")
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-else:
-    st.warning("No data available for the selected date range. Please adjust the filters.")
+mean_emission = ds[emission_type].mean(dim="time")
+
+mean_emission_df = mean_emission.to_dataframe().reset_index()
+
+layer = pdk.Layer(
+    "HeatmapLayer",
+    data=mean_emission_df,
+    get_position=["lon", "lat"],
+    get_weight=emission_type,
+)
+
+view_state = pdk.ViewState(
+    longitude=0,
+    latitude=0,
+    zoom=1,
+    min_zoom=0,
+    max_zoom=15,
+    pitch=40.5,
+    bearing=-27.396674584323023,
+)
+
+r = pdk.Deck(
+    layers=[layer],
+    initial_view_state=view_state,
+    tooltip={"text": "{C}"},
+)
+
+# Render PyDeck map in Streamlit, but make it full-width and full-height
+st.pydeck_chart(r, use_container_width=True)
