@@ -2,13 +2,18 @@ import numpy as np
 import xarray as xr
 import dask
 import streamlit as st
-import pydeck as pdk
+import xarray as xr
 import pandas as pd
+import pydeck as pdk
+from pathlib import Path
 from datetime import datetime
 
-# Load multiple NetCDF files as an Xarray dataset with Dask for lazy loading
-data_path = "GFED5_Beta_daily_202012.nc"  # Update to your dataset path
+DATA_DIR = "./GFED5/daily/"
+
+# open just
+data_path = f"{DATA_DIR}/GFED5_Beta_daily_202105.nc"
 ds = xr.open_mfdataset(data_path, chunks={"time": 1}, parallel=True)
+ds = ds.drop_vars(list(ds.data_vars.keys())[:2])
 
 # Sidebar widgets for filtering
 st.sidebar.header("Filter Options")
@@ -45,6 +50,7 @@ else:
 # Filter dataset based on the date range
 filtered_data = ds[emission_type].sel(time=slice(filtered_start_date, filtered_end_date))
 
+# List all NetCDF files in the directory
 # Check if data is available and non-empty
 if filtered_data.time.size > 0:
     try:
@@ -56,6 +62,7 @@ if filtered_data.time.size > 0:
             monthly_avg = filtered_data.resample(time="1ME").mean()
             data_to_plot = monthly_avg.isel(time=0).compute()  # Compute for a specific month
 
+        all_files = sorted(Path(DATA_DIR).glob("*.nc"))
         # Flatten arrays
         latitudes, longitudes = np.meshgrid(
             data_to_plot["lat"].values, data_to_plot["lon"].values, indexing="ij"
@@ -64,35 +71,47 @@ if filtered_data.time.size > 0:
         longitudes = longitudes.ravel()  # Flatten longitudes
         emissions = data_to_plot.values.ravel()  # Flatten emissions
 
-        # Create DataFrame
-        data_df = pd.DataFrame({
-            "lat": latitudes,
-            "lon": longitudes,
-            "emissions": emissions,
-        }).dropna()
+        # Filter files by date range
 
-        # PyDeck Layer
+        filtered_files = [
+             str(file) for file in all_files
+             if start_date <= pd.to_datetime(file.stem[-6:], format="%Y%m") <= end_date
+             ]
+
+        if not filtered_files:
+             raise ValueError("No files match the specified date range.")
+
+        ds = xr.open_mfdataset(filtered_files)
+
+        mean_emission = ds[emission_type].mean(dim="time")
+
+        mean_emission_df = mean_emission.to_dataframe().reset_index()
+
         layer = pdk.Layer(
             "HeatmapLayer",
-            data=data_df.to_dict(orient="records"),  # Convert DataFrame to a list of dictionaries
+            data=mean_emission_df,
             get_position=["lon", "lat"],
-            get_weight="emissions",
-            radius_pixels=20 if show_daily else 30,
+            get_weight=emission_type,
         )
 
-        # ViewState for PyDeck
-        view_state = {
-            "latitude": float(data_df["lat"].mean()),  # Convert to native Python float
-            "longitude": float(data_df["lon"].mean()),  # Convert to native Python float
-            "zoom": 3,
-            "pitch": 0,
-            "bearing": 0,
-        }
+        view_state = pdk.ViewState(
+            longitude=0,
+            latitude=0,
+            zoom=1,
+            min_zoom=0,
+            max_zoom=15,
+            pitch=40.5,
+            bearing=-27.396674584323023,
+        )
 
-        # Render PyDeck Chart
-        deck = pdk.Deck(layers=[layer], initial_view_state=view_state)
-        st.pydeck_chart(deck)
+        r = pdk.Deck(
+            layers=[layer],
+            initial_view_state=view_state,
+            tooltip={"text": "{C}"},
+        )
 
+        # Render PyDeck map in Streamlit, but make it full-width and full-height
+        st.pydeck_chart(r, use_container_width=True)
     except ValueError as ve:
         st.error(f"ValueError: {ve}")
     except Exception as e:
