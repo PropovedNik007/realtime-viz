@@ -63,7 +63,7 @@ r = pdk.Deck(
     initial_view_state=view_state
 )
 
-screen_height = streamlit_js_eval(js_expressions='screen.height', key='unique_key_scr')
+# screen_height = streamlit_js_eval(js_expressions='screen.height', key='unique_key_scr')
 
 if screen_height is None:
     screen_height = 1080

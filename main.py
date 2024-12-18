@@ -6,40 +6,21 @@ import pydeck as pdk
 import streamlit as st
 import streamlit as st
 from pathlib import Path
+from streamlit_js_eval import streamlit_js_eval
 from datetime import datetime
+from dask.dataframe import from_pandas
 
 from dask.dataframe.io.parquet.core import apply_filters
 from datetime import datetime
 
 from dask.dataframe.io.parquet.core import apply_filters
 
+st.set_page_config(layout="wide")
+
 DATA_DIR = "./GFED5/daily/"
-DATA_DIR = "./GFED5/daily/"
+# DATA_DIR = "./GFED5/monthly/"
 
-
-@st.cache_data
-def get_filtered_files(data_dir, start_date, end_date):
-    all_files = sorted(Path(data_dir).glob("*.nc"))
-    return [
-        str(file) for file in all_files
-        if pd.to_datetime(start_date) <= pd.to_datetime(file.stem[-6:], format="%Y%m") <= pd.to_datetime(end_date)
-    ]
-
-
-@st.cache_data
-def load_dataset(file_list):
-    # return xr.open_mfdataset(file_list, chunks={"time": 1, "lat": 100, "lon": 100}, parallel=True)
-    ds = xr.open_mfdataset(file_list, chunks=None, parallel=True)
-    return ds.chunk({"time": 1, "lat": 100, "lon": 100})
-
-
-@st.cache_data
-def compute_aggregated_data(_ds, emission_type, start_date, end_date, show_daily):
-    filtered_data = ds[emission_type].sel(time=slice(start_date, end_date))
-    if show_daily:
-        return filtered_data.compute()
-    return filtered_data.resample(time="1ME").mean().mean(dim="time").compute()
-
+screen_height =  streamlit_js_eval(js_expressions='screen.height', key = 'SCR')
 
 @st.cache_data
 def get_filtered_files(data_dir, start_date, end_date):
@@ -68,8 +49,8 @@ def compute_aggregated_data(_ds, emission_type, start_date, end_date, show_daily
 # Sidebar widgets for filtering
 st.sidebar.header("Filter Options")
 emission_type = st.sidebar.selectbox("Emission Type", ['C','CO2','CO','CH4','NMOC_g','H2','NOx','N2O','PM2p5','TPC','OC','BC','SO2','NH3','C2H6','CH3OH','C2H5OH','C3H8','C2H2','C2H4','C3H6','C5H8','C10H16','C7H8','C6H6','C8H10','Toluene_lump','Higher_Alkenes','Higher_Alkanes','CH2O','C2H4O','C3H6O','C2H6S','HCN','HCOOH','CH3COOH','MEK','CH3COCHO','HOCH2CHO'])
-pick_start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2021-01-01"))
-pick_end_date = st.sidebar.date_input("End Date", value=pd.to_datetime("2021-02-01"))
+pick_start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2016-04-01"))
+pick_end_date = st.sidebar.date_input("End Date", value=pd.to_datetime("2018-11-01"))
 
 if pick_start_date >= pick_end_date:
     st.sidebar.error("Start Date must be earlier than End Date.")
