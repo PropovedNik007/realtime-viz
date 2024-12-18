@@ -84,34 +84,7 @@ start_date, end_date = appointment
 
 # Checkbox for daily data visualization
 show_daily = st.checkbox("Show Daily Data", value=False)
-emission_type = st.sidebar.selectbox("Emission Type", ['C','CO2','CO','CH4','NMOC_g','H2','NOx','N2O','PM2p5','TPC','OC','BC','SO2','NH3','C2H6','CH3OH','C2H5OH','C3H8','C2H2','C2H4','C3H6','C5H8','C10H16','C7H8','C6H6','C8H10','Toluene_lump','Higher_Alkenes','Higher_Alkanes','CH2O','C2H4O','C3H6O','C2H6S','HCN','HCOOH','CH3COOH','MEK','CH3COCHO','HOCH2CHO'])
-pick_start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2021-01-01"))
-pick_end_date = st.sidebar.date_input("End Date", value=pd.to_datetime("2021-02-01"))
 
-if pick_start_date >= pick_end_date:
-    st.sidebar.error("Start Date must be earlier than End Date.")
-    st.stop()
-
-# Sliders for date range selection
-appointment = st.slider(
-    "Select Start/End Date (Aggregated Range)", value=(pick_start_date, pick_end_date)
-    # "Select Start/End Date (Aggregated Range)", value=(datetime(2021, 1, 1), datetime(2021, 1, 3))
-)
-start_date, end_date = appointment
-
-# Checkbox for daily data visualization
-show_daily = st.checkbox("Show Daily Data", value=False)
-
-# Load filtered files and dataset
-apply_filters = st.button("Apply Filters", type="primary")
-if apply_filters:
-    try:
-        filtered_files = get_filtered_files(DATA_DIR, start_date, end_date)
-        if not filtered_files:
-            st.error("No files found for the selected date range.")
-            st.stop()
-
-        ds = load_dataset(filtered_files)
 # Load filtered files and dataset
 apply_filters = st.button("Apply Filters", type="primary")
 if apply_filters:

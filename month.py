@@ -63,4 +63,10 @@ r = pdk.Deck(
     initial_view_state=view_state
 )
 
+screen_height = streamlit_js_eval(js_expressions='screen.height', key='unique_key_scr')
+
+if screen_height is None:
+    screen_height = 1080
+    # st.warning("Could not retrieve screen height. Using default value of 1080px.")
+
 st.pydeck_chart(r, height= screen_height - int((screen_height * 0.25)))
