@@ -16,14 +16,23 @@ st.set_page_config(layout="wide")
 js_code = """
 <script>
     window.setTimeout(() => {
-        const deck = document.querySelector(".deck-gl");
-        if (deck) {
-            deck.__deck._onViewStateChange = ({ viewState }) => {
-                window.__map_view_state__ = viewState;
-                console.log('ViewState updated:', viewState); // Correctly logs the viewState
-            };
+        const deckWrapper = document.getElementById("deckgl-wrapper");
+        if (deckWrapper) {
+            const deck = deckWrapper.__deck;
+            if (deck) {
+                deck._onViewStateChange = ({ viewState }) => {
+                    window.__map_view_state__ = viewState;
+                    console.log('ViewState updated:', viewState);
+                };
+                console.log('Handler attached successfully');
+            } else {
+                console.log('Deck instance not found');
+            }
+        } else {
+            console.log('Deck wrapper not found');
         }
-    }, 1000);
+    }, 3000);  // Adjust the timeout if necessary
+
 </script>
 """
 components.html(js_code, height=0, width=0)
