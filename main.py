@@ -14,7 +14,15 @@ st.set_page_config(layout="wide")
 def get_filtered_files(data_dir, start_date, end_date):
     all_files = sorted(Path(data_dir).glob("*.nc"))
     if data_dir == DAILY_DATA_DIR:
-        return [str(file) for file in all_files if pd.to_datetime(start_date) <= pd.to_datetime(file.stem[-6:], format="%Y%m") <= pd.to_datetime(end_date)]
+        # return [str(file) for file in all_files if pd.to_datetime(start_date) <= pd.to_datetime(file.stem[-6:], format="%Y%m") <= pd.to_datetime(end_date)]
+
+        start_year_month = start_date.strftime("%Y%m")
+        end_year_month = end_date.strftime("%Y%m")
+
+        return [
+            str(file) for file in all_files
+            if start_year_month <= file.stem[-6:] <= end_year_month
+        ]
     else:
         return [str(file) for file in all_files if start_date.year <= int(file.stem[-4:]) <= end_date.year]
 
@@ -86,8 +94,8 @@ timeline = st.checkbox("Timeline changes", value=False)
 
 if timeline:
     daily_date_range = st.slider("Select Date for Daily Data", start_date, end_date, start_date)
-    start_date = daily_date_range
-    end_date = daily_date_range + pd.Timedelta(days=1)
+    start_date_daily = daily_date_range
+    end_date_daily = daily_date_range + pd.Timedelta(days=1)
 
 resolution = st.sidebar.slider("H3 Resolution (Lower is Coarser)", min_value=1, max_value=10, value=4)
 
@@ -95,7 +103,12 @@ map_col, slider_col = st.columns([3, 1])
 
 try:
     # Get filtered files
-    filtered_files = get_filtered_files(data_dir, start_date, end_date)
+    if timeline:
+        filtered_files = get_filtered_files(data_dir, start_date_daily, end_date_daily)
+    else:
+        filtered_files = get_filtered_files(data_dir, start_date, end_date)
+
+    st.write(f"Filtered files: {filtered_files}")
     if not filtered_files:
         st.error("No files found for the selected date range.")
         st.stop()
