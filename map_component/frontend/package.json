@@ -1,0 +1,20 @@
+{
+  "name": "map-component",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "rollup -c",
+    "start": "rollup -c -w"
+  },
+  "dependencies": {
+    "@deck.gl/core": "^8.9.24",
+    "@deck.gl/layers": "^8.9.24",
+    "streamlit-component-lib": "^1.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^24.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "rollup": "^3.2.0",
+    "rollup-plugin-livereload": "^2.0.5",
+    "rollup-plugin-serve": "^1.1.1"
+  }
+}
