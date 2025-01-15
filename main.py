@@ -29,10 +29,21 @@ def get_filtered_files(data_dir, start_date, end_date):
 
 # Load and process data
 @st.cache_data
-def process_emission_data(filtered_files, variable, resolution):
+def process_emission_data(filtered_files, variable, resolution, aggr="sum"):
     # Open the dataset and select the variable
     ds = xr.open_mfdataset(filtered_files)[variable]
-    ds = ds.sum(dim="time")
+
+    if aggr == "mean":
+        ds = ds.mean(dim="time")
+    elif aggr == "sum":
+        ds = ds.sum(dim="time")
+    elif aggr == "max":
+        ds = ds.max(dim="time")
+    elif aggr == "min":
+        ds = ds.min(dim="time")
+    else:
+        st.error("Invalid aggregation type. Please select one of 'sum', 'mean', 'max', or 'min'.")
+        st.stop()
 
     lat = ds['lat'].values
     lon = ds['lon'].values
@@ -102,6 +113,8 @@ if timeline:
 
 resolution = st.sidebar.slider("H3 Resolution (Lower is Coarser)", min_value=1, max_value=5, value=4)
 
+aggr = st.sidebar.radio("Aggregation Type", ["sum", "mean", "max", "min"])
+
 try:
     # Get filtered files
     if timeline:
@@ -117,7 +130,7 @@ try:
     # st.write(f"Found {len(filtered_files)} files for the selected date range.")
 
     # Process data
-    emission_data = process_emission_data(filtered_files, emission_type, resolution)
+    emission_data = process_emission_data(filtered_files, emission_type, resolution, aggr)
 
     # Define the pydeck layer
     layer = pdk.Layer(
