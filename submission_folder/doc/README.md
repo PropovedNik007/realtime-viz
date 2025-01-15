@@ -5,6 +5,9 @@ This Streamlit application provides an interactive visualization tool for explor
 
 ![image](screen.png)
 
+GitHub link:
+https://github.com/PropovedNik007/realtime-viz.git
+
 ---
 
 ## **Features**
@@ -87,9 +90,13 @@ The user interacts with the app via the sidebar, which includes the following op
   - ./GFED5/daily/
   - ./GFED5/monthly/
 
-Download them via:
+Download data via:
 ```bash
 wget https://surfdrive.surf.nl/files/index.php/s/VPMEYinPeHtWVxn/download
+```
+
+```bash
+git clone https://github.com/PropovedNik007/realtime-viz.git
 ```
 
 ## **2. Run the Application**
