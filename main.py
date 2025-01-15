@@ -32,7 +32,7 @@ def get_filtered_files(data_dir, start_date, end_date):
 def process_emission_data(filtered_files, variable, resolution):
     # Open the dataset and select the variable
     ds = xr.open_mfdataset(filtered_files)[variable]
-    ds = ds.mean(dim="time")
+    ds = ds.sum(dim="time")
 
     lat = ds['lat'].values
     lon = ds['lon'].values
@@ -61,15 +61,15 @@ def process_emission_data(filtered_files, variable, resolution):
 
     return df
 
-st.title("Emission Data Visualization")
+# st.title("Emission Data Visualization")
 st.sidebar.header("Filter Options")
 
 # Sidebar inputs
 DAILY_DATA_DIR = "./GFED5/daily/"
 MONTHLY_DATA_DIR = "./GFED5/monthly/"
 
-st.sidebar.header("Filter Options")
 data_type = st.sidebar.radio("Data Type", ["Daily", "Monthly"], index=1)
+
 data_dir = DAILY_DATA_DIR if data_type == "Daily" else MONTHLY_DATA_DIR
 
 screen_height = streamlit_js_eval(js_expressions='screen.height', key='SCR') or 1080
@@ -90,16 +90,17 @@ if pick_start_date >= pick_end_date:
 appointment = st.slider("Select Start/End Date (Aggregated Range)", value=(pick_start_date, pick_end_date))
 start_date, end_date = appointment
 
-timeline = st.checkbox("Timeline changes", value=False)
+if data_type == "Daily":
+    timeline = st.checkbox("Timeline changes", value=True)
+else:
+    timeline = st.checkbox("Timeline changes", value=False)
 
 if timeline:
     daily_date_range = st.slider("Select Date for Daily Data", start_date, end_date, start_date)
     start_date_daily = daily_date_range
     end_date_daily = daily_date_range + pd.Timedelta(days=1)
 
-resolution = st.sidebar.slider("H3 Resolution (Lower is Coarser)", min_value=1, max_value=10, value=4)
-
-map_col, slider_col = st.columns([3, 1])
+resolution = st.sidebar.slider("H3 Resolution (Lower is Coarser)", min_value=1, max_value=5, value=4)
 
 try:
     # Get filtered files
@@ -108,7 +109,7 @@ try:
     else:
         filtered_files = get_filtered_files(data_dir, start_date, end_date)
 
-    st.write(f"Filtered files: {filtered_files}")
+    # st.write(f"Filtered files: {filtered_files}")
     if not filtered_files:
         st.error("No files found for the selected date range.")
         st.stop()
