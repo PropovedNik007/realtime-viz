@@ -3,6 +3,8 @@
 ## **Overview**
 This Streamlit application provides an interactive visualization tool for exploring emission data using **H3 hexagonal binning** and **pydeck**. It supports dynamic data filtering based on temporal, spatial, and aggregation options, allowing users to explore large datasets efficiently.
 
+![image](screen.png)
+
 ---
 
 ## **Features**
@@ -75,7 +77,6 @@ The user interacts with the app via the sidebar, which includes the following op
       bearing=0,
       pitch=0,
   )
-
 
 
 # How to Run the Application
