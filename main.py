@@ -6,6 +6,16 @@ from pathlib import Path
 from streamlit_js_eval import streamlit_js_eval
 import h3
 from collections import defaultdict
+import os
+
+# Check if DAILY_DATA_DIR and MONTHLY_DATA_DIR exist, if not, download and extract
+if not os.path.exists("./GFED5/daily/") or not os.path.exists("./GFED5/monthly/"):
+    st.warning("Data directories do not exist. Downloading data...")
+    os.system("wget -O gfed_data.zip https://surfdrive.surf.nl/files/index.php/s/VPMEYinPeHtWVxn/download")
+    st.warning("Extracting data...")
+    os.system("unzip gfed_data.zip -d ./GFED5/")  # Make sure unzip is installed
+    st.success("Download and extraction complete.")
+    
 
 # Streamlit page configuration
 st.set_page_config(layout="wide")
