@@ -101,8 +101,8 @@ emission_type = st.sidebar.selectbox("Emission Type", [
     'MEK', 'CH3COCHO', 'HOCH2CHO'
 ])
 
-pick_start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2016-04-01"))
-pick_end_date = st.sidebar.date_input("End Date", value=pd.to_datetime("2018-11-01"))
+pick_start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2022-01-01"))
+pick_end_date = st.sidebar.date_input("End Date", value=pd.to_datetime("2022-12-30"))
 if pick_start_date >= pick_end_date:
     st.sidebar.error("Start Date must be earlier than End Date.")
     st.stop()
